@@ -1,73 +1,91 @@
-import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 
-// 1. Khởi tạo Prisma, truyền đúng datasources
-// 2. Chốt hạ bằng "as string" để TypeScript im lặng tuyệt đối!
-const prisma = new PrismaClient({
-    datasources: {
-        db: {
-            url: process.env.DATABASE_URL as string,
-        },
-    },
-});
+const prisma = new PrismaClient();
 
 async function main() {
-    console.log('Đang mở cửa kho... 🚀');
-
+    console.log('🔥 Bắt đầu dọn dẹp Database cũ...');
+    // Xoá theo thứ tự từ con đến cha để không bị lỗi khoá ngoại
+    await prisma.productVariant.deleteMany();
     await prisma.product.deleteMany();
-    console.log('Đã dọn dẹp kho bãi, chuẩn bị nhập hàng!');
+    await prisma.category.deleteMany();
 
-    const perfumes = [
-        {
-            name: 'Sauvage',
-            brand: 'Dior',
-            description: 'Hương gỗ cay nồng, nam tính và cực kỳ lôi cuốn.',
-            price: 3500000,
+    console.log('✨ Đang tạo Danh mục (Categories)...');
+    const catNu = await prisma.category.create({ data: { name: 'Nước hoa Nữ' } });
+    const catNam = await prisma.category.create({ data: { name: 'Nước hoa Nam' } });
+    const catUnisex = await prisma.category.create({ data: { name: 'Unisex' } });
+
+    console.log('🌹 Đang chế tác 4 siêu phẩm nước hoa Aura...');
+
+    // 1. Midnight Rose
+    await prisma.product.create({
+        data: {
+            name: 'Midnight Rose',
+            brand: 'Aura',
+            description: 'Sự quyến rũ bí ẩn từ Hồng nhung và Trầm hương. Tuyệt tác dành cho những đêm tiệc sang trọng.',
             imageUrl: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=800&q=80',
-            category: 'Woody',
-            stock: 50,
-        },
-        {
-            name: 'Bleu de Chanel',
-            brand: 'Chanel',
-            description: 'Hương cam chanh và gỗ, thanh lịch, chững chạc và sâu lắng.',
-            price: 4200000,
-            imageUrl: 'https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?auto=format&fit=crop&w=800&q=80',
-            category: 'Citrus',
-            stock: 30,
-        },
-        {
-            name: 'Oud Wood',
-            brand: 'Tom Ford',
-            description: 'Hương gỗ trầm hương, sang trọng, đẳng cấp và bí ẩn.',
-            price: 6800000,
-            imageUrl: 'https://images.unsplash.com/photo-1615634260167-c8cdede054de?auto=format&fit=crop&w=800&q=80',
-            category: 'Woody',
-            stock: 15,
-        },
-        {
-            name: 'Baccarat Rouge 540',
-            brand: 'Maison Francis Kurkdjian',
-            description: 'Hương hoa cỏ phương đông, ngọt ngào, vương giả và bám tỏa cực khủng.',
-            price: 8500000,
-            imageUrl: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=800&q=80',
-            category: 'Floral',
-            stock: 10,
+            categoryId: catNu.id,
+            variants: {
+                create: [
+                    { volume: 50, price: 2500000, stock: 15, discountPercent: 0 }
+                ]
+            }
         }
-    ];
+    });
 
-    for (const p of perfumes) {
-        await prisma.product.create({
-            data: p,
-        });
-    }
+    // 2. Ocean Breeze
+    await prisma.product.create({
+        data: {
+            name: 'Ocean Breeze',
+            brand: 'Aura',
+            description: 'Bản hòa ca của Hương biển và Cam Bergamot, mang lại cảm giác tự do, phóng khoáng như cơn gió đại dương.',
+            imageUrl: 'https://images.unsplash.com/photo-1595425970377-c9703cc48a7e?auto=format&fit=crop&w=800&q=80',
+            categoryId: catUnisex.id,
+            variants: {
+                create: [
+                    { volume: 50, price: 1800000, stock: 30, discountPercent: 10 } // Đang giảm giá 10%
+                ]
+            }
+        }
+    });
 
-    console.log(`Bơm dữ liệu thành công! 🎉 Đã nhập ${perfumes.length} siêu phẩm vào MongoDB.`);
+    // 3. Vanilla Sky
+    await prisma.product.create({
+        data: {
+            name: 'Vanilla Sky',
+            brand: 'Aura',
+            description: 'Ngọt ngào và ấm áp với Vani nguyên bản kết hợp cùng Hổ phách. Lưu hương suốt ngày dài.',
+            imageUrl: 'https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?auto=format&fit=crop&w=800&q=80',
+            categoryId: catNu.id,
+            variants: {
+                create: [
+                    { volume: 50, price: 2200000, stock: 20, discountPercent: 0 }
+                ]
+            }
+        }
+    });
+
+    // 4. Mystic Wood
+    await prisma.product.create({
+        data: {
+            name: 'Mystic Wood',
+            brand: 'Aura',
+            description: 'Bản lĩnh phái mạnh được khẳng định qua nốt hương Gỗ tuyết tùng và Tiêu đen cay nồng.',
+            imageUrl: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?auto=format&fit=crop&w=800&q=80',
+            categoryId: catNam.id,
+            variants: {
+                create: [
+                    { volume: 100, price: 2800000, stock: 5, discountPercent: 0 } // Chai bự, số lượng có hạn
+                ]
+            }
+        }
+    });
+
+    console.log('✅ Chúc mừng Sếp! Database đã được bơm đầy dữ liệu xịn xò!');
 }
 
 main()
     .catch((e) => {
-        console.error('Ối dồi ôi lỗi rồi đại vương ơi:', e);
+        console.error(e);
         process.exit(1);
     })
     .finally(async () => {
