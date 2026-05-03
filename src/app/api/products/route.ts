@@ -1,0 +1,41 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/auth';
+import { prisma } from '@/lib/prisma';
+
+export async function POST(req: NextRequest) {
+    const session = await auth();
+    if (!session || session.user.role !== 'ADMIN') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { name, brand, description, imageUrl, categoryId, variants } = await req.json();
+
+    if (!name || !brand || !categoryId || !variants?.length) {
+        return NextResponse.json({ error: 'Thiếu thông tin bắt buộc' }, { status: 400 });
+    }
+
+    const product = await prisma.product.create({
+        data: {
+            name,
+            brand,
+            description,
+            imageUrl,
+            categoryId,
+            variants: {
+                create: variants.map((v: {
+                    volume: number;
+                    price: number;
+                    discountPercent: number;
+                    stock: number;
+                }) => ({
+                    volume: v.volume,
+                    price: v.price,
+                    discountPercent: v.discountPercent ?? 0,
+                    stock: v.stock ?? 0,
+                })),
+            },
+        },
+    });
+
+    return NextResponse.json({ message: 'Tạo sản phẩm thành công', productId: product.id }, { status: 201 });
+}

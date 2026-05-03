@@ -40,7 +40,7 @@ export default function LoginPage() {
                 {/* LOGO */}
                 <div className="text-center mb-10">
                     <h1 className="font-serif text-3xl font-bold tracking-widest text-stone-900">
-                        AURA <span className="text-rose-400 font-sans text-sm tracking-normal italic">by Mochi</span>
+                        AURA <span className="text-rose-400 font-sans text-sm tracking-normal italic">Signature</span>
                     </h1>
                     <p className="text-stone-500 mt-2 text-sm">Chào mừng trở lại</p>
                 </div>

@@ -6,7 +6,7 @@ import CartDrawer from "@/app/components/cart/CartDrawer";
 import AuthProvider from "@/app/components/auth/AuthProvider";
 
 export const metadata: Metadata = {
-    title: "Aura by Mochi",
+    title: "Aura Signature",
     description: "Showroom Nước Hoa Sang Xịn Mịn",
 };
 

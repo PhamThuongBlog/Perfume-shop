@@ -59,11 +59,21 @@ export default async function AdminPage() {
                                 </td>
                                 <td className="py-3">
                                         <span className={`px-2 py-1 rounded-full text-xs font-medium
-                                            ${order.status === 'PENDING'
-                                            ? 'bg-yellow-50 text-yellow-600'
-                                            : 'bg-green-50 text-green-600'
-                                        }`}>
-                                            {order.status === 'PENDING' ? 'Chờ xử lý' : 'Đã giao'}
+                                            ${{
+                                            PENDING:   'bg-yellow-50 text-yellow-600',
+                                            SHIPPING:  'bg-blue-50 text-blue-600',
+                                            SHIPPED:   'bg-green-50 text-green-600',
+                                            CANCELLED: 'bg-red-50 text-red-500',
+                                            REFUNDED:  'bg-purple-50 text-purple-500',
+                                        }[order.status] ?? 'bg-stone-50 text-stone-500'}
+                                        `}>
+                                            {{
+                                            PENDING:   'Chờ xử lý',
+                                            SHIPPING:  'Đang giao',
+                                            SHIPPED:   'Đã giao',
+                                            CANCELLED: 'Đã hủy',
+                                            REFUNDED:  'Hoàn tiền',
+                                        }[order.status] ?? order.status}
                                         </span>
                                 </td>
                                 <td className="py-3 text-stone-400">

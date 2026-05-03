@@ -24,6 +24,7 @@ export default function VariantSelector({ variants, productId, productName, bran
     const [selectedId, setSelectedId] = useState<string>(variants[0]?.id ?? '');
 
     const selected = variants.find((v) => v.id === selectedId) ?? variants[0];
+    const [quantity, setQuantity] = useState(1);
 
     // Tính giá sau giảm
     const discountedPrice =
@@ -57,7 +58,7 @@ export default function VariantSelector({ variants, productId, productName, bran
                     return (
                         <button
                             key={variant.id}
-                            onClick={() => !isSoldOut && setSelectedId(variant.id)}
+                            onClick={() => { if (!isSoldOut) { setSelectedId(variant.id); setQuantity(1); } }}
                             disabled={isSoldOut}
                             className={`border-2 rounded-xl p-4 min-w-30 flex flex-col items-center transition-all
                                 ${isSelected
@@ -93,28 +94,67 @@ export default function VariantSelector({ variants, productId, productName, bran
                 })}
             </div>
 
-            {/* GIÁ HIỂN THỊ THEO VARIANT ĐANG CHỌN */}
+            {/* GIÁ HIỂN THỊ */}
             <div className="mt-6 flex items-baseline gap-3">
-                <span className="text-3xl font-bold text-gray-900">
-                    {(discountedPrice ?? selected.price).toLocaleString('vi-VN')} ₫
-                </span>
+    <span className="text-3xl font-bold text-gray-900">
+        {((discountedPrice ?? selected.price) * quantity).toLocaleString('vi-VN')} ₫
+    </span>
                 {discountedPrice && (
                     <span className="text-lg text-gray-400 line-through">
-                        {selected.price.toLocaleString('vi-VN')} ₫
-                    </span>
+            {(selected.price * quantity).toLocaleString('vi-VN')} ₫
+        </span>
                 )}
+            </div>
+
+            {/* SỐ LƯỢNG */}
+            <div className="mt-4 flex items-center gap-3">
+                <span className="text-sm font-medium text-gray-700">Số lượng:</span>
+                <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden">
+                    <button
+                        type="button"
+                        onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                        className="px-4 py-2 text-gray-600 hover:bg-gray-100 transition-colors text-lg"
+                    >
+                        −
+                    </button>
+                    <span className="px-4 py-2 font-semibold text-gray-900 min-w-[3rem] text-center">
+            {quantity}
+        </span>
+                    <button
+                        type="button"
+                        onClick={() => setQuantity(q => Math.min(selected.stock, q + 1))}
+                        disabled={quantity >= selected.stock}
+                        className="px-4 py-2 text-gray-600 hover:bg-gray-100 transition-colors text-lg disabled:opacity-30"
+                    >
+                        +
+                    </button>
+                </div>
+                <span className="text-xs text-gray-400">Còn {selected.stock} sản phẩm</span>
             </div>
 
             {/* NÚT THÊM GIỎ HÀNG */}
             <button
-                onClick={handleAddToCart}
+                onClick={() => {
+                    for (let i = 0; i < quantity; i++) {
+                        addItem({
+                            variantId: selected.id,
+                            productId,
+                            productName,
+                            brand,
+                            imageUrl,
+                            volume: selected.volume,
+                            price: selected.price,
+                            discountPercent: selected.discountPercent,
+                            stock: selected.stock,
+                        });
+                    }
+                }}
                 disabled={selected.stock === 0}
                 className={`mt-6 w-full text-lg font-semibold py-4 px-8 rounded-xl transition-colors shadow-lg
-                    ${selected.stock === 0
+        ${selected.stock === 0
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     : 'bg-black text-white hover:bg-gray-800'
-                }
-                `}
+                }`}
             >
                 {selected.stock === 0 ? 'Hết hàng' : 'Thêm vào giỏ hàng'}
             </button>
