@@ -34,8 +34,10 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-[#FDFBF7] px-4">
+        <div className="flex items-center justify-center bg-[#FDFBF7] px-4 py-30">
             <div className="w-full max-w-md">
+                <style>{`footer { display: none !important; }`}</style>
+
 
                 {/* LOGO */}
                 <div className="text-center mb-10">

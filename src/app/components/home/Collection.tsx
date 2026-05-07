@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import CollectionClient from './CollectionClient';
 
+export const revalidate = 0;
 export default async function Collection() {
     const [products, categories] = await Promise.all([
         prisma.product.findMany({
