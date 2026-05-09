@@ -33,32 +33,44 @@ export async function PUT(
     const { id } = await params;
     const { name, brand, description, imageUrl, categoryId, variants } = await req.json();
 
-    // Cập nhật thông tin sản phẩm
-    await prisma.product.update({
-        where: { id },
-        data: { name, brand, description, imageUrl, categoryId },
-    });
+    try {
+        await prisma.product.update({
+            where: { id },
+            data: { name, brand, description, imageUrl, categoryId },
+        });
 
-    // Xóa toàn bộ variants cũ rồi tạo lại — đơn giản và an toàn nhất
-    await prisma.productVariant.deleteMany({ where: { productId: id } });
+        for (const v of variants) {
+            if (v.id) {
+                // Update variant đã có
+                await prisma.productVariant.update({
+                    where: { id: v.id },
+                    data: {
+                        volume: v.volume,
+                        price: v.price,
+                        discountPercent: v.discountPercent ?? 0,
+                        stock: v.stock ?? 0,
+                    },
+                });
+            } else {
+                // Tạo variant mới
+                await prisma.productVariant.create({
+                    data: {
+                        productId: id,
+                        volume: v.volume,
+                        price: v.price,
+                        discountPercent: v.discountPercent ?? 0,
+                        stock: v.stock ?? 0,
+                    },
+                });
+            }
+        }
 
-    await prisma.productVariant.createMany({
-        data: variants.map((v: {
-            volume: number;
-            price: number;
-            discountPercent: number;
-            stock: number;
-        }) => ({
-            productId: id,
-            volume: v.volume,
-            price: v.price,
-            discountPercent: v.discountPercent ?? 0,
-            stock: v.stock ?? 0,
-        })),
-    });
-
-    revalidatePath('/');
-    return NextResponse.json({ message: 'Cập nhật thành công' });
+        revalidatePath('/');
+        return NextResponse.json({ message: 'Cập nhật thành công' });
+    } catch (error) {
+        console.error('PUT error:', error);
+        return NextResponse.json({ error: String(error) }, { status: 500 });
+    }
 }
 
 // DELETE /api/products/[id] — Xóa sản phẩm

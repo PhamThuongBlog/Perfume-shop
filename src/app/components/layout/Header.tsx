@@ -4,15 +4,12 @@ import { ShoppingBag, Menu, LogOut, User, Search } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import { useCartStore } from '@/store/cartStore';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
 
 export default function Header() {
     const { data: session } = useSession();
-    const { totalItems, openCart, clearCart } = useCartStore();
-    const [mounted, setMounted] = useState(false);
-    useEffect(() => {
-        setTimeout(() => setMounted(true), 0);
-    }, []);
+    const { openCart, clearCart } = useCartStore();
+    const cartCount = useCartStore((state) => state.items.reduce((sum, i) => sum + i.quantity, 0));
+
 
     return (
         <nav className="fixed w-full z-40 top-0 bg-[#FDFBF7]/80 backdrop-blur-md border-b border-stone-200/50">
@@ -57,9 +54,9 @@ export default function Header() {
                             className="p-2 hover:bg-stone-100 rounded-full relative transition-colors"
                         >
                             <ShoppingBag className="w-5 h-5" />
-                            {mounted && totalItems() > 0 && (
+                            {cartCount > 0 && (
                                 <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-rose-400 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                                    {totalItems()}
+                                    {cartCount}
                                 </span>
                             )}
                         </button>
