@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { revalidatePath } from 'next/cache';
 
 // GET /api/products/[id] — Lấy chi tiết sản phẩm cho form edit
 export async function GET(
@@ -56,6 +57,7 @@ export async function PUT(
         })),
     });
 
+    revalidatePath('/');
     return NextResponse.json({ message: 'Cập nhật thành công' });
 }
 
@@ -71,6 +73,7 @@ export async function DELETE(
 
     const { id } = await params;
     await prisma.product.delete({ where: { id } });
+    revalidatePath('/');
 
     return NextResponse.json({ message: 'Đã xóa sản phẩm' });
 }

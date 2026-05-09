@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { revalidatePath } from 'next/cache';
 
 export async function POST(req: NextRequest) {
     const session = await auth();
@@ -37,5 +38,6 @@ export async function POST(req: NextRequest) {
         },
     });
 
+    revalidatePath('/');
     return NextResponse.json({ message: 'Tạo sản phẩm thành công', productId: product.id }, { status: 201 });
 }
