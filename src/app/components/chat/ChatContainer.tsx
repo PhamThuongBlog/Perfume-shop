@@ -23,10 +23,11 @@ const fetchWithRetry = async (url: string, options: RequestInit, retries = 5, in
 export default function ChatContainer() {
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [messages, setMessages] = useState([
-        { role: 'model', text: 'Xin chào! Tôi là chuyên gia mùi hương của Aura. Tôi có thể giúp bạn tìm kiếm hương nước hoa hoàn hảo nào cho ngày hôm nay?' }
+        { role: 'model', text: 'Chào bạn! Mình có thể giúp gì cho bạn hôm nay? 😊' }
     ]);
     const [inputMessage, setInputMessage] = useState('');
     const [isTyping, setIsTyping] = useState(false);
+    const [products, setProducts] = useState<string>('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
@@ -36,6 +37,20 @@ export default function ChatContainer() {
     useEffect(() => {
         scrollToBottom();
     }, [messages, isTyping]);
+    useEffect(() => {
+        fetch('/api/products')
+            .then(res => res.json())
+            .then(data => {
+                const list = data.map((p: {
+                        name: string;
+                        description: string;
+                        variants: { volume: number; price: number }[]
+                    }) =>
+                        `- ${p.name}: ${p.description ?? ''} | Giá từ ${p.variants[0]?.price.toLocaleString('vi-VN')}₫`
+                ).join('\n');
+                setProducts(list);
+            });
+    }, []);
 
     const handleSendMessage = async (e?: FormEvent) => {
         e?.preventDefault();
@@ -58,7 +73,15 @@ export default function ChatContainer() {
                 })),
                 systemInstruction: {
                     parts: [{
-                        text: `Bạn là chuyên gia tư vấn tại Aura...` // Giữ nguyên instruction của anh
+                        text: `Bạn là nhân viên tư vấn nước hoa tại AURA Signature. Trả lời ngắn gọn, tự nhiên như nhắn tin thật — tối đa 2-3 câu mỗi lần. Không dùng markdown, không gạch đầu dòng, không hoa mỹ thái quá.
+                        Danh sách sản phẩm hiện có:
+                        ${products}
+                        
+                        Quy tắc:
+                        - Hỏi 1 câu thôi, không hỏi nhiều cùng lúc
+                        - Gợi ý đúng sản phẩm trong danh sách, kèm giá
+                        - Nếu khách hỏi ngoài chủ đề nước hoa, nhẹ nhàng đưa về chủ đề chính
+                        - Xưng "mình", gọi khách là "bạn"`
                     }]
                 }
             };

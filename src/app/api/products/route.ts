@@ -3,6 +3,14 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
+export async function GET() {
+    const products = await prisma.product.findMany({
+        include: { variants: { orderBy: { volume: 'asc' } } },
+        orderBy: { createdAt: 'desc' },
+    });
+    return NextResponse.json(products);
+}
+
 export async function POST(req: NextRequest) {
     const session = await auth();
     if (!session || session.user.role !== 'ADMIN') {

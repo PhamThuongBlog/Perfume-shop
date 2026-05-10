@@ -2,51 +2,44 @@
 import React, { useState, useEffect, useRef, FormEvent } from 'react';
 import { Sparkles, MessageCircle, X, Send, Bot } from 'lucide-react';
 
-// Bê nguyên hàm fetchWithRetry sang đây
-const fetchWithRetry = async (url: string, options: RequestInit, retries = 5, initialDelay = 1000) => {
-    let delay = initialDelay;
-    for (let i = 0; i < retries; i++) {
-        try {
-            const res = await fetch(url, options);
-            if (res.ok) return await res.json();
-            if (i === retries - 1) return Promise.reject(new Error(`HTTP error! status: ${res.status}`));
-            console.warn(`Attempt ${i + 1} failed. Retrying...`);
-        } catch (e) {
-            if (i === retries - 1) throw e;
-            console.warn(`Attempt ${i + 1} encountered a network error. Retrying...`);
-        }
-        await new Promise(resolve => setTimeout(resolve, delay));
-        delay *= 2;
-    }
-};
-
-// Định nghĩa Props để nhận lệnh từ page.tsx
 interface ChatWidgetProps {
     isChatOpen: boolean;
     setIsChatOpen: React.Dispatch<React.SetStateAction<boolean>>;
-    messages: { role: string; text: string }[]; // Thêm dòng này
-    inputMessage: string;                        // Thêm dòng này
-    setInputMessage: (value: string) => void;    // Thêm dòng này
-    handleSendMessage: (e?: React.FormEvent) => Promise<void>; // Thêm dòng này
-    isTyping: boolean;                           // Thêm dòng này
-    messagesEndRef: React.RefObject<HTMLDivElement | null>; // Thêm dòng này
 }
 
 export default function ChatWidget({ isChatOpen, setIsChatOpen }: ChatWidgetProps) {
     const [messages, setMessages] = useState([
-        { role: 'model', text: 'Xin chào! Tôi là chuyên gia mùi hương của Aura. Tôi có thể giúp bạn tìm kiếm hương nước hoa hoàn hảo nào cho ngày hôm nay?' }
+        { role: 'model', text: 'Chào bạn! Bạn đang tìm nước hoa cho dịp nào vậy? 😊' }
     ]);
     const [inputMessage, setInputMessage] = useState('');
     const [isTyping, setIsTyping] = useState(false);
+    const [products, setProducts] = useState<string>('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    const scrollToBottom = () => {
+    useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    };
+    }, [messages, isTyping]);
 
     useEffect(() => {
-        scrollToBottom();
-    }, [messages, isTyping]);
+        fetch('/api/products')
+            .then(res => res.json())
+            .then(data => {
+                const list = data.map((p: {
+                    name: string;
+                    brand: string;
+                    description: string;
+                    variants: { volume: number; price: number; discountPercent: number }[]
+                }) => {
+                    const v = p.variants[0];
+                    const price = v ? (v.discountPercent > 0
+                        ? v.price * (1 - v.discountPercent / 100)
+                        : v.price) : 0;
+                    return `- ${p.name} (${p.brand}): ${p.description ?? ''} | ${v?.volume}ml - ${price.toLocaleString('vi-VN')}₫`;
+                }).join('\n');
+                setProducts(list);
+            })
+            .catch(() => setProducts(''));
+    }, []);
 
     const handleSendMessage = async (e?: FormEvent) => {
         e?.preventDefault();
@@ -59,7 +52,7 @@ export default function ChatWidget({ isChatOpen, setIsChatOpen }: ChatWidgetProp
         setIsTyping(true);
 
         try {
-            const apiKey = "AIzaSyBu3eUVCiqMQgf0jeqlbtW-aRS143kb5p4"; // API Key
+            const apiKey = "AIzaSyBu3eUVCiqMQgf0jeqlbtW-aRS143kb5p4";
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
             const payload = {
@@ -69,29 +62,31 @@ export default function ChatWidget({ isChatOpen, setIsChatOpen }: ChatWidgetProp
                 })),
                 systemInstruction: {
                     parts: [{
-                        text: `Bạn là một chuyên gia tư vấn nước hoa cao cấp, tinh tế và lịch sự tại cửa hàng 'Aura by Mochi'. 
-                        Cửa hàng hiện có các sản phẩm sau: 
-                        1. Midnight Rose (Hồng nhung, Trầm hương - 2.500.000đ)
-                        2. Ocean Breeze (Hương biển, Cam Bergamot - 1.800.000đ)
-                        3. Vanilla Sky (Vani, Hổ phách - 2.200.000đ)
-                        4. Mystic Wood (Gỗ tuyết tùng, Tiêu đen - 2.800.000đ)
-                        Hãy hỏi sở thích của khách hàng, lắng nghe và đưa ra gợi ý chân thành. Giữ giọng điệu thanh lịch, lãng mạn.`
+                        text: `Bạn là nhân viên tư vấn nước hoa tại AURA Signature. Trả lời ngắn gọn, tự nhiên như nhắn tin — tối đa 2 câu. Không dùng markdown, không gạch đầu dòng, không hoa mỹ. Không tự giới thiệu dài dòng.
+
+Sản phẩm hiện có:
+${products || 'Đang tải...'}
+
+Quy tắc:
+- Mỗi lần chỉ hỏi 1 câu
+- Chỉ gợi ý sản phẩm có trong danh sách trên, kèm giá
+- Xưng "mình", gọi khách là "bạn"
+- Nếu hỏi ngoài chủ đề nước hoa, nhẹ nhàng đưa về chủ đề chính`
                     }]
                 }
             };
 
-            const data = await fetchWithRetry(url, {
+            const res = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
 
-            const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Xin lỗi, hệ thống đang quá tải.";
+            const data = await res.json();
+            const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Hệ thống đang bận, bạn thử lại nhé!";
             setMessages(prev => [...prev, { role: 'model', text: replyText }]);
-
-        } catch (error) {
-            console.error("Chat API Error:", error);
-            setMessages(prev => [...prev, { role: 'model', text: "Đã có lỗi kết nối xảy ra. Bạn thông cảm đợi lát rồi thử lại nhé 🌿" }]);
+        } catch {
+            setMessages(prev => [...prev, { role: 'model', text: "Lỗi kết nối, bạn thử lại sau nhé 🌿" }]);
         } finally {
             setIsTyping(false);
         }
@@ -100,7 +95,8 @@ export default function ChatWidget({ isChatOpen, setIsChatOpen }: ChatWidgetProp
     return (
         <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
             {isChatOpen && (
-                <div className="w-[350px] sm:w-[400px] h-[500px] bg-white rounded-2xl shadow-2xl shadow-rose-900/10 border border-stone-100 flex flex-col mb-4 overflow-hidden transform transition-all origin-bottom-right">
+                <div className="w-[350px] sm:w-[400px] h-[500px] bg-white rounded-2xl shadow-2xl shadow-rose-900/10 border border-stone-100 flex flex-col mb-4 overflow-hidden">
+                    {/* HEADER */}
                     <div className="bg-[#FDFBF7] p-4 border-b border-stone-100 flex justify-between items-center">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center relative">
@@ -112,14 +108,12 @@ export default function ChatWidget({ isChatOpen, setIsChatOpen }: ChatWidgetProp
                                 <p className="text-xs text-rose-500 font-medium">Đang trực tuyến</p>
                             </div>
                         </div>
-                        <button
-                            onClick={() => setIsChatOpen(false)}
-                            className="p-2 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-full transition-colors"
-                        >
+                        <button onClick={() => setIsChatOpen(false)} className="p-2 text-stone-400 hover:text-stone-600 hover:bg-stone-100 rounded-full transition-colors">
                             <X className="w-5 h-5" />
                         </button>
                     </div>
 
+                    {/* MESSAGES */}
                     <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-stone-50/50">
                         {messages.map((msg, idx) => (
                             <div key={idx} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -148,13 +142,14 @@ export default function ChatWidget({ isChatOpen, setIsChatOpen }: ChatWidgetProp
                         <div ref={messagesEndRef} />
                     </div>
 
+                    {/* INPUT */}
                     <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-stone-100">
                         <div className="relative flex items-center">
                             <input
                                 type="text"
                                 value={inputMessage}
                                 onChange={(e) => setInputMessage(e.target.value)}
-                                placeholder="Miêu tả sở thích của bạn..."
+                                placeholder="Nhắn tin với Aura AI..."
                                 className="w-full bg-stone-100 text-sm text-stone-800 rounded-full pl-4 pr-12 py-3 focus:outline-none focus:ring-2 focus:ring-rose-200 transition-all"
                             />
                             <button
@@ -171,7 +166,7 @@ export default function ChatWidget({ isChatOpen, setIsChatOpen }: ChatWidgetProp
 
             <button
                 onClick={() => setIsChatOpen(!isChatOpen)}
-                className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 ${isChatOpen ? 'bg-stone-200 text-stone-800 scale-90' : 'bg-stone-900 text-white hover:bg-rose-500 hover:scale-105 shadow-rose-900/20'}`}
+                className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 ${isChatOpen ? 'bg-stone-200 text-stone-800 scale-90' : 'bg-stone-900 text-white hover:bg-rose-500 hover:scale-105'}`}
             >
                 {isChatOpen ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
             </button>
