@@ -17,6 +17,7 @@ type Product = {
     name: string;
     brand: string;
     imageUrl: string | null;
+    images: string[];
     category: { id: string; name: string };
     variants: Variant[];
 };
@@ -45,7 +46,8 @@ export default function CollectionClient({ products }: Props) {
         if (!el || products.length === 0) return;
         const firstCard = el.firstElementChild as HTMLElement;
         if (firstCard) {
-            CARD_WIDTH.current = firstCard.offsetWidth + 24;
+            CARD_WIDTH.current = firstCard.offsetWidth + 24; // gap-6 = 24px
+            // Khởi tạo ở giữa (set thứ 2) để có thể scroll cả 2 chiều
             el.scrollLeft = CARD_WIDTH.current * products.length;
         }
     }, [products.length]);
@@ -152,90 +154,106 @@ export default function CollectionClient({ products }: Props) {
                         <p>Chưa có sản phẩm nào</p>
                     </div>
                 ) : (
-                    <div
-                        ref={carouselRef}
-                        onMouseDown={onMouseDown}
-                        onMouseMove={onMouseMove}
-                        onMouseUp={onMouseUp}
-                        onMouseLeave={onMouseUp}
-                        className="flex gap-6 overflow-x-auto pb-4 cursor-grab active:cursor-grabbing select-none"
-                        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                    >
-                        {loopedProducts.map((product, index) => {
-                            const firstVariant = product.variants[0];
-                            const discountedPrice = firstVariant
-                                ? firstVariant.price * (1 - firstVariant.discountPercent / 100)
-                                : 0;
+                    /* FIX: Wrapper overflow-hidden ngăn card bị clip bởi section padding,
+                       đồng thời dùng -mx + px để carousel scroll sát edge nhưng nội dung vẫn căn đúng */
+                    <div className="overflow-hidden">
+                        <div
+                            ref={carouselRef}
+                            onMouseDown={onMouseDown}
+                            onMouseMove={onMouseMove}
+                            onMouseUp={onMouseUp}
+                            onMouseLeave={onMouseUp}
+                            className="flex gap-6 overflow-x-auto pb-4 cursor-grab active:cursor-grabbing select-none"
+                            style={{
+                                scrollbarWidth: 'none',
+                                msOverflowStyle: 'none',
+                                /* FIX: padding đầu + cuối để card không bị clip khi ở position đầu/cuối viewport */
+                                paddingLeft: '2px',
+                                paddingRight: '2px',
+                            }}
+                        >
+                            {loopedProducts.map((product, index) => {
+                                const firstVariant = product.variants[0];
+                                const discountedPrice = firstVariant
+                                    ? firstVariant.price * (1 - firstVariant.discountPercent / 100)
+                                    : 0;
 
-                            return (
-                                <Link
-                                    href={`/product/${product.id}`}
-                                    key={`${product.id}-${index}`}
-                                    className="group flex-shrink-0 w-[calc((100%-96px)/5)] flex flex-col snap-start"
-                                    draggable={false}
-                                    onClick={(e) => { if (hasDragged.current) e.preventDefault(); }}
-                                >
-                                    <div className="relative w-full aspect-[4/5] bg-stone-100 overflow-hidden rounded-xl mb-4">
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img
-                                            src={product.imageUrl || 'https://via.placeholder.com/400x500'}
-                                            alt={product.name}
-                                            draggable={false}
-                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                                        />
-                                        <button
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                setWishlist(prev => {
-                                                    const next = new Set(prev);
-                                                    next.has(product.id) ? next.delete(product.id) : next.add(product.id);
-                                                    return next;
-                                                });
-                                            }}
-                                            className="absolute top-3 left-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                return (
+                                    <Link
+                                        href={`/product/${product.id}`}
+                                        key={`${product.id}-${index}`}
+                                        className="group flex-shrink-0 w-[calc((100%-96px)/5)] flex flex-col snap-start"
+                                        draggable={false}
+                                        onClick={(e) => { if (hasDragged.current) e.preventDefault(); }}
+                                    >
+                                        <div
+                                            className="relative w-full aspect-[4/5] bg-stone-100 overflow-hidden rounded-xl mb-4"
+                                            onMouseEnter={() => setWishlist(prev => new Set([...prev, `hover-${product.id}-${index}`]))}
+                                            onMouseLeave={() => setWishlist(prev => { const next = new Set(prev); next.delete(`hover-${product.id}-${index}`); return next; })}
                                         >
-                                            <Heart className={`w-4 h-4 transition-colors ${wishlist.has(product.id) ? 'fill-rose-500 text-rose-500' : 'text-stone-400'}`} />
-                                        </button>
-                                        {firstVariant?.discountPercent > 0 && (
-                                            <div className="absolute top-3 right-3">
-                                                <span className="px-2.5 py-1 bg-rose-500 text-white text-xs font-bold rounded-full">
-                                                    -{firstVariant.discountPercent}%
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img
+                                                src={product.images?.[1] && wishlist.has(`hover-${product.id}-${index}`)
+                                                    ? product.images[1]
+                                                    : (product.imageUrl || 'https://via.placeholder.com/400x500')}
+                                                alt={product.name}
+                                                draggable={false}
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700 ease-out"
+                                            />
+                                            <button
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    setWishlist(prev => {
+                                                        const next = new Set(prev);
+                                                        next.has(product.id) ? next.delete(product.id) : next.add(product.id);
+                                                        return next;
+                                                    });
+                                                }}
+                                                className="absolute top-3 left-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                <Heart className={`w-4 h-4 transition-colors ${wishlist.has(product.id) ? 'fill-rose-500 text-rose-500' : 'text-stone-400'}`} />
+                                            </button>
+                                            {firstVariant?.discountPercent > 0 && (
+                                                <div className="absolute top-3 right-3">
+                                                    <span className="px-2.5 py-1 bg-rose-500 text-white text-xs font-bold rounded-full">
+                                                        -{firstVariant.discountPercent}%
+                                                    </span>
+                                                </div>
+                                            )}
+                                            <div className="absolute bottom-0 left-0 right-0 h-14 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-3">
+                                                <span className="text-white text-xs uppercase tracking-widest font-medium">
+                                                    Xem chi tiết
                                                 </span>
                                             </div>
-                                        )}
-                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                                            <span className="translate-y-4 group-hover:translate-y-0 transition-all duration-300 bg-white text-stone-900 px-5 py-2.5 text-xs uppercase tracking-widest hover:bg-stone-900 hover:text-white rounded-sm shadow-md font-medium">
-                                                Xem chi tiết
-                                            </span>
                                         </div>
-                                    </div>
 
-                                    <div className="flex flex-col flex-1">
-                                        <p className="text-xs text-stone-400 uppercase tracking-wider mb-1">{product.brand}</p>
-                                        <h4 className="text-base font-serif text-stone-900 mb-2 group-hover:text-rose-500 transition-colors leading-snug">
-                                            {product.name}
-                                        </h4>
-                                        <div className="mt-auto flex items-center gap-2">
-                                            {firstVariant ? (
-                                                <>
-                                                    <span className="font-semibold text-stone-900 text-sm">
-                                                        {formatPrice(discountedPrice)}
-                                                    </span>
-                                                    {firstVariant.discountPercent > 0 && (
-                                                        <span className="text-xs text-stone-400 line-through">
-                                                            {formatPrice(firstVariant.price)}
+                                        <div className="flex flex-col flex-1">
+                                            <p className="text-xs text-stone-400 uppercase tracking-wider mb-1">{product.brand}</p>
+                                            <h4 className="text-base font-serif text-stone-900 mb-2 group-hover:text-rose-500 transition-colors leading-snug">
+                                                {product.name}
+                                            </h4>
+                                            <div className="mt-auto flex items-center gap-2">
+                                                {firstVariant ? (
+                                                    <>
+                                                        <span className="font-semibold text-stone-900 text-sm">
+                                                            {formatPrice(discountedPrice)}
                                                         </span>
-                                                    )}
-                                                </>
-                                            ) : (
-                                                <span className="text-sm text-stone-400 italic">Đang cập nhật</span>
-                                            )}
+                                                        {firstVariant.discountPercent > 0 && (
+                                                            <span className="text-xs text-stone-400 line-through">
+                                                                {formatPrice(firstVariant.price)}
+                                                            </span>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <span className="text-sm text-stone-400 italic">Đang cập nhật</span>
+                                                )}
+                                            </div>
+                                            <p className="text-xs text-stone-400 mt-1">{firstVariant?.volume}ml</p>
                                         </div>
-                                        <p className="text-xs text-stone-400 mt-1">{firstVariant?.volume}ml</p>
-                                    </div>
-                                </Link>
-                            );
-                        })}
+                                    </Link>
+                                );
+                            })}
+                        </div>
                     </div>
                 )}
             </div>

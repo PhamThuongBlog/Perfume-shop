@@ -31,12 +31,21 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const { name, brand, description, imageUrl, categoryId, variants } = await req.json();
+    const { name, brand, description, imageUrl, images, categoryId, variants } = await req.json();
 
     try {
         await prisma.product.update({
             where: { id },
-            data: { name, brand, description, imageUrl, categoryId },
+            data: { name, brand, description, imageUrl: images?.[0] ?? imageUrl, images: images ?? [], categoryId },
+        });
+
+
+        const incomingIds = variants.filter((v: {id?: string}) => v.id).map((v: {id: string}) => v.id);
+        await prisma.productVariant.deleteMany({
+            where: {
+                productId: id,
+                id: { notIn: incomingIds },
+            },
         });
 
         for (const v of variants) {

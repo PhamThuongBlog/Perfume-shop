@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import ImageUpload from '../../ImageUpload';
+import MultiImageUpload from '../../MultiImageUpload';
 
 type Variant = {
     id?: string;
@@ -30,7 +30,7 @@ export default function EditProductPage() {
     const [name, setName] = useState('');
     const [brand, setBrand] = useState('');
     const [description, setDescription] = useState('');
-    const [imageUrl, setImageUrl] = useState('');
+    const [images, setImages] = useState<string[]>([]);
     const [categoryId, setCategoryId] = useState('');
     const [variants, setVariants] = useState<Variant[]>([]);
 
@@ -43,7 +43,7 @@ export default function EditProductPage() {
             setName(data.name);
             setBrand(data.brand);
             setDescription(data.description ?? '');
-            setImageUrl(data.imageUrl ?? '');
+            setImages(data.images ?? (data.imageUrl ? [data.imageUrl] : []));
             setCategoryId(data.categoryId);
             setVariants(data.variants);
             setFetching(false);
@@ -70,7 +70,7 @@ export default function EditProductPage() {
         const res = await fetch(`/api/products/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, brand, description, imageUrl, categoryId, variants }),
+            body: JSON.stringify({ name, brand, description, imageUrl: images[0] ?? '', images, categoryId, variants }),
         });
 
         setLoading(false);
@@ -155,7 +155,7 @@ export default function EditProductPage() {
                         <label className="block text-sm font-medium text-stone-700 mb-1">Link ảnh</label>
                         <div>
                             <label className="block text-sm font-medium text-stone-700 mb-1">Ảnh sản phẩm</label>
-                            <ImageUpload value={imageUrl} onChange={setImageUrl} />
+                            <MultiImageUpload values={images} onChange={setImages} />
                         </div>
                     </div>
                 </div>

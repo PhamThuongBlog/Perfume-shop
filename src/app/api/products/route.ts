@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { name, brand, description, imageUrl, categoryId, variants } = await req.json();
+    const { name, brand, description, imageUrl, images, categoryId, variants } = await req.json();
 
     if (!name || !brand || !categoryId || !variants?.length) {
         return NextResponse.json({ error: 'Thiếu thông tin bắt buộc' }, { status: 400 });
@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
             brand,
             description,
             imageUrl,
+            images: images ?? [],
             categoryId,
             variants: {
                 create: variants.map((v: {

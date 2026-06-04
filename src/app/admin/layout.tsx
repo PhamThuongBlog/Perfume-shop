@@ -12,7 +12,7 @@ export default async function AdminLayout({
     if (session.user.role !== 'ADMIN') redirect('/');
 
     return (
-        <div className="min-h-screen bg-stone-100 pt-24 pb-10 px-6">
+        <div className="min-h-screen bg-stone-100 pt-8 pb-10 px-6">
             <div className="max-w-7xl mx-auto flex gap-6 items-start">
 
                 {/* SIDEBAR */}

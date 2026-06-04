@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import VariantSelector from './VariantSelector';
+import ImageGallery from './ImageGallery';
 
 export default async function ProductDetailPage({
                                                     params,
@@ -21,16 +22,8 @@ export default async function ProductDetailPage({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
 
                 {/* ẢNH SẢN PHẨM */}
-                <div className="bg-gray-100 rounded-2xl h-[500px] flex items-center justify-center overflow-hidden shadow-sm">
-                    {product.imageUrl ? (
-                        <img
-                            src={product.imageUrl}
-                            alt={product.name}
-                            className="object-cover h-full w-full"
-                        />
-                    ) : (
-                        <span className="text-gray-400 font-medium">Chưa có ảnh sản phẩm</span>
-                    )}
+                <div className="space-y-3">
+                    <ImageGallery imageUrl={product.imageUrl} images={product.images ?? []} name={product.name} />
                 </div>
 
                 {/* THÔNG TIN SẢN PHẨM */}
