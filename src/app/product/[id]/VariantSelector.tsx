@@ -28,10 +28,9 @@ export default function VariantSelector({ variants, productId, productName, bran
 
     const selected = variants.find((v) => v.id === selectedId) ?? variants[0];
 
-    const discountedPrice =
-        selected.discountPercent > 0
-            ? selected.price * (1 - selected.discountPercent / 100)
-            : null;
+    const discountedPrice = selected.discountPercent > 0
+        ? selected.price * (1 - selected.discountPercent / 100)
+        : null;
 
     const displayPrice = discountedPrice ?? selected.price;
 
@@ -63,16 +62,13 @@ export default function VariantSelector({ variants, productId, productName, bran
                     {variants.map((variant) => {
                         const isSelected = variant.id === selectedId;
                         const isSoldOut = variant.stock === 0;
-                        const variantDiscounted = variant.discountPercent > 0
-                            ? variant.price * (1 - variant.discountPercent / 100)
-                            : null;
 
                         return (
                             <button
                                 key={variant.id}
                                 onClick={() => { if (!isSoldOut) { setSelectedId(variant.id); setQuantity(1); } }}
                                 disabled={isSoldOut}
-                                className={`relative px-5 py-2.5 rounded-full border text-sm font-semibold transition-all duration-200
+                                className={`px-5 py-2.5 rounded-full border text-sm font-semibold transition-all duration-200
                                     ${isSelected
                                     ? 'border-stone-900 bg-stone-900 text-white shadow-md'
                                     : 'border-stone-200 bg-white text-stone-700 hover:border-stone-400'
@@ -81,16 +77,18 @@ export default function VariantSelector({ variants, productId, productName, bran
                                 `}
                             >
                                 {variant.volume}ml
-                                {variantDiscounted && !isSelected && (
-                                    <span className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-red-500 rounded-full border-2 border-white" />
-                                )}
                             </button>
                         );
                     })}
                 </div>
-                {selected.stock > 0 && selected.stock < 5 && (
-                    <p className="text-xs text-orange-500 font-medium mt-2">
-                        ⚠ Chỉ còn {selected.stock} chai
+
+                {/* Tồn kho */}
+                {selected.stock > 0 && (
+                    <p className="text-xs mt-2 font-medium">
+                        {selected.stock < 5
+                            ? <span className="text-orange-500">⚠ Chỉ còn {selected.stock} chai</span>
+                            : <span className="text-stone-500">Còn {selected.stock} chai</span>
+                        }
                     </p>
                 )}
             </div>
@@ -106,9 +104,14 @@ export default function VariantSelector({ variants, productId, productName, bran
                     >
                         −
                     </button>
-                    <span className="w-10 text-center font-semibold text-stone-900 text-sm">
-                        {quantity}
-                    </span>
+                        <input
+                            type="number"
+                            min={1}
+                            max={selected.stock}
+                            value={quantity}
+                            onChange={e => setQuantity(Math.min(selected.stock, Math.max(1, Number(e.target.value))))}
+                            className="w-10 text-center font-semibold text-stone-900 text-sm bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
                     <button
                         type="button"
                         onClick={() => setQuantity(q => Math.min(selected.stock, q + 1))}

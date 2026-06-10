@@ -74,6 +74,8 @@ model Product {
   // Nội dung dài
   ingredients   String?   // Chuỗi dài thành phần
   longDesc      String?   // Mô tả dài
+  whenToWear    String[]  // ["Ngày", "Đêm", "Xuân", "Hè", "Thu", "Đông"]
+  accords       String[]  // ["Citrus", "Floral", "Woody"...]
 
   // Relations
   reviews         Review[]

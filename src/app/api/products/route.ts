@@ -17,7 +17,12 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { name, brand, description, imageUrl, images, categoryId, variants } = await req.json();
+    const {
+        name, brand, description, imageUrl, images, categoryId, variants,
+        concentration, origin, gender, releaseYear, scentGroup, perfumer,
+        longevity, sillage, season, occasion, style,
+        topNotes, heartNotes, baseNotes, ingredients, longDesc, whenToWear, accords,
+    } = await req.json();
 
     if (!name || !brand || !categoryId || !variants?.length) {
         return NextResponse.json({ error: 'Thiếu thông tin bắt buộc' }, { status: 400 });
@@ -31,6 +36,24 @@ export async function POST(req: NextRequest) {
             imageUrl,
             images: images ?? [],
             categoryId,
+            concentration,
+            origin,
+            gender,
+            releaseYear: releaseYear ? Number(releaseYear) : null,
+            scentGroup,
+            perfumer,
+            longevity,
+            sillage,
+            season: season ?? [],
+            occasion: occasion ?? [],
+            style: style ?? [],
+            topNotes: topNotes ?? [],
+            heartNotes: heartNotes ?? [],
+            baseNotes: baseNotes ?? [],
+            ingredients,
+            longDesc,
+            whenToWear: whenToWear ?? [],
+            accords: accords ?? [],
             variants: {
                 create: variants.map((v: {
                     volume: number;

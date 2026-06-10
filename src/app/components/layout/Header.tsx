@@ -97,7 +97,7 @@ export default function Header() {
                 <div className="w-full px-6 lg:px-12">
                     <div className="flex items-center justify-center h-12 gap-8">
                         {[
-                            { label: 'Hot Deals', href: '/' },
+                            { label: 'Trang chủ', href: '/' },
                             { label: 'Cửa hàng', href: '/shop' },
                             { label: 'Hàng mới về', href: '/shop' },
                             { label: 'Nước hoa nam', href: '/shop?category=Nước Hoa Nam' },

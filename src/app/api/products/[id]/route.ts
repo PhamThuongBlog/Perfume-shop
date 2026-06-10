@@ -31,12 +31,40 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const { name, brand, description, imageUrl, images, categoryId, variants } = await req.json();
+    const {
+        name, brand, description, imageUrl, images, categoryId, variants,
+        concentration, origin, gender, releaseYear, scentGroup, perfumer,
+        longevity, sillage, season, occasion, style,
+        topNotes, heartNotes, baseNotes, ingredients, longDesc, whenToWear, accords
+    } = await req.json();
 
     try {
         await prisma.product.update({
             where: { id },
-            data: { name, brand, description, imageUrl: images?.[0] ?? imageUrl, images: images ?? [], categoryId },
+            data: {
+                name, brand, description,
+                imageUrl: images?.[0] ?? imageUrl,
+                images: images ?? [],
+                categoryId,
+                concentration,
+                origin,
+                gender,
+                releaseYear: releaseYear ? Number(releaseYear) : null,
+                scentGroup,
+                perfumer,
+                longevity,
+                sillage,
+                season: season ?? [],
+                occasion: occasion ?? [],
+                style: style ?? [],
+                topNotes: topNotes ?? [],
+                heartNotes: heartNotes ?? [],
+                baseNotes: baseNotes ?? [],
+                ingredients,
+                longDesc,
+                whenToWear: whenToWear ?? [],
+                accords: accords ?? [],
+            },
         });
 
 

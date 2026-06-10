@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-const TABS = ['Hương Điệu', 'Thành Phần', 'Cách Dùng', 'Đánh Giá'] as const;
+const TABS = ['Tầng Hương', 'Cách Dùng', 'Đánh Giá'] as const;
 type Tab = typeof TABS[number];
 
 type Review = {
@@ -37,7 +37,7 @@ function timeAgo(date: Date) {
 }
 
 export default function ProductTabs({ product, reviews }: Props) {
-    const [active, setActive] = useState<Tab>('Hương Điệu');
+    const [active, setActive] = useState<Tab>('Tầng Hương');
 
     const hasNotes = product.topNotes?.length || product.heartNotes?.length || product.baseNotes?.length;
 
@@ -69,7 +69,7 @@ export default function ProductTabs({ product, reviews }: Props) {
             <div className="py-10">
 
                 {/* HƯƠNG ĐIỆU */}
-                {active === 'Hương Điệu' && (
+                {active === 'Tầng Hương' && (
                     hasNotes ? (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                             {[
@@ -100,22 +100,6 @@ export default function ProductTabs({ product, reviews }: Props) {
                     ) : (
                         <p className="text-sm text-stone-400">Chưa có thông tin hương điệu.</p>
                     )
-                )}
-
-                {/* THÀNH PHẦN */}
-                {active === 'Thành Phần' && (
-                    <div className="max-w-2xl space-y-4">
-                        {product.ingredients ? (
-                            <>
-                                <p className="text-sm text-stone-500 leading-relaxed">{product.ingredients}</p>
-                                <p className="text-xs text-stone-400">
-                                    * Thông tin thành phần có thể thay đổi. Vui lòng kiểm tra bao bì sản phẩm thực tế.
-                                </p>
-                            </>
-                        ) : (
-                            <p className="text-sm text-stone-400">Chưa có thông tin thành phần.</p>
-                        )}
-                    </div>
                 )}
 
                 {/* CÁCH DÙNG */}
