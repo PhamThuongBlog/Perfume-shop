@@ -9,7 +9,6 @@ const STATUS_MAP: Record<string, { label: string; className: string }> = {
     SHIPPING:  { label: 'Đang giao',           className: 'bg-blue-50 text-blue-600' },
     SHIPPED:   { label: 'Đã giao',             className: 'bg-green-50 text-green-600' },
     CANCELLED: { label: 'Đã hủy',              className: 'bg-red-50 text-red-500' },
-    REFUNDED:  { label: 'Trả hàng/Hoàn tiền',  className: 'bg-purple-50 text-purple-500' },
 };
 
 export default async function ProfilePage() {
@@ -31,7 +30,7 @@ export default async function ProfilePage() {
     });
 
     return (
-        <div className="min-h-screen bg-[#FDFBF7] pt-28 pb-16 px-4">
+        <div className="min-h-screen bg-[#FDFBF7] pt-18 pb-16 px-4">
             <div className="max-w-4xl mx-auto">
                 <h1 className="text-2xl font-bold text-stone-900 mb-8">Tài khoản của tôi</h1>
 
@@ -130,7 +129,11 @@ export default async function ProfilePage() {
                                                 </div>
                                             ))}
                                         </div>
-                                        <OrderActionButton orderId={order.id} status={order.status} />
+                                        {order.status === 'PENDING' && (
+                                            <div className="mt-3 pt-3 border-t border-stone-50">
+                                                <OrderActionButton orderId={order.id} status={order.status} />
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })

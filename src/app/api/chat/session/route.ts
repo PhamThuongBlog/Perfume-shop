@@ -4,8 +4,17 @@ import { auth } from '@/auth';
 
 // POST — tạo session mới
 export async function POST() {
-    const session = await auth();
-    const userId = session?.user?.id ?? null;
+    let userId: string | null = null;
+
+    try {
+        const session = await Promise.race([
+            auth(),
+            new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000))
+        ]);
+        userId = session?.user?.id ?? null;
+    } catch {
+        userId = null;
+    }
 
     // Nếu đã đăng nhập → tìm session cũ nhất còn dùng được
     if (userId) {
