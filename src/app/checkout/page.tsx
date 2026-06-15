@@ -15,6 +15,10 @@ export default function CheckoutPage() {
     const [phone, setPhone] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [discountCode, setDiscountCode] = useState('');
+    const [discountData, setDiscountData] = useState<any>(null);
+    const [discountMsg, setDiscountMsg] = useState('');
+    const [applyingDiscount, setApplyingDiscount] = useState(false);
 
     // Chưa đăng nhập
     if (!session) {
@@ -53,7 +57,11 @@ export default function CheckoutPage() {
         const res = await fetch('/api/orders', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ address, phone, items }),
+            body: JSON.stringify({
+                address, phone, items,
+                discountCode: discountData?.code || null,
+                discountAmount: discountData?.discountAmount || 0,
+            }),
         });
 
         setLoading(false);
@@ -65,6 +73,35 @@ export default function CheckoutPage() {
             const data = await res.json();
             setError(data.error || 'Đặt hàng thất bại, thử lại sau.');
         }
+    };
+
+    const handleApplyDiscount = async () => {
+        if (!discountCode.trim()) return;
+        setApplyingDiscount(true);
+        setDiscountMsg('');
+        setDiscountData(null);
+        try {
+            const r = await fetch('/api/marketing/discounts/validate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    code: discountCode.trim(),
+                    cartTotal: totalPrice(),
+                    userId: (session?.user as any)?.id,
+                    productIds: items.map(i => i.productId),
+                }),
+            });
+            const d = await r.json();
+            if (d.success) {
+                setDiscountData(d.data);
+                setDiscountMsg(`Giảm ${d.data.discountAmount.toLocaleString('vi-VN')}đ`);
+            } else {
+                setDiscountMsg(d.error?.message || 'Mã không hợp lệ');
+            }
+        } catch (e) {
+            setDiscountMsg('Lỗi kiểm tra mã');
+        }
+        setApplyingDiscount(false);
     };
 
     return (
@@ -157,10 +194,47 @@ export default function CheckoutPage() {
                             );
                         })}
 
+                        {/* Discount Code */}
+                        <div className="border-t border-stone-100 pt-4">
+                            <p className="text-sm font-medium text-stone-700 mb-2">Mã giảm giá</p>
+                            <div className="flex gap-2">
+                                <input
+                                    value={discountCode}
+                                    onChange={e => { setDiscountCode(e.target.value); setDiscountData(null); setDiscountMsg(''); }}
+                                    placeholder="Nhập mã giảm giá"
+                                    className="flex-1 px-3 py-2 rounded-lg border border-stone-200 text-sm focus:outline-none focus:border-indigo-400"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleApplyDiscount}
+                                    disabled={applyingDiscount || !discountCode.trim()}
+                                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                                >
+                                    {applyingDiscount ? '...' : 'Áp dụng'}
+                                </button>
+                            </div>
+                            {discountMsg && (
+                                <p className={`text-xs mt-2 ${discountData ? 'text-green-600' : 'text-red-500'}`}>
+                                    {discountData ? '✅' : '❌'} {discountMsg}
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Discount applied */}
+                        {discountData && (
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-green-600">Giảm giá</span>
+                                <span className="text-green-600 font-medium">-{discountData.discountAmount.toLocaleString('vi-VN')} ₫</span>
+                            </div>
+                        )}
+
                         <div className="border-t border-stone-100 pt-4 flex justify-between items-center">
                             <span className="font-semibold text-stone-900">Tổng cộng</span>
                             <span className="text-xl font-bold text-stone-900">
-                                {totalPrice().toLocaleString('vi-VN')} ₫
+                                {discountData
+                                    ? discountData.finalTotal.toLocaleString('vi-VN')
+                                    : totalPrice().toLocaleString('vi-VN')
+                                } ₫
                             </span>
                         </div>
                     </div>

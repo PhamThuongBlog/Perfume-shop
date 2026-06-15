@@ -202,3 +202,137 @@ model Review {
   text      String
   createdAt DateTime @default(now())
 }
+
+// ================================================================
+// MODULE MARKETING SỐ
+// ================================================================
+
+enum DiscountType {
+  PERCENTAGE    // Giảm theo %
+  FIXED_AMOUNT  // Giảm số tiền cố định
+  FREE_SHIP     // Miễn phí vận chuyển
+  BUY_X_GET_Y   // Mua X tặng Y
+}
+
+model DiscountCode {
+  id            String       @id @default(auto()) @map("_id") @db.ObjectId
+  code          String       @unique          // Mã giảm giá (vd: SUMMER2024)
+  description   String?                       // Mô tả
+  type          DiscountType @default(PERCENTAGE)
+  value         Float                         // Giá trị giảm (% hoặc số tiền)
+  minOrderValue Float        @default(0)      // Đơn hàng tối thiểu
+  maxDiscount   Float?                        // Giảm tối đa (cho PERCENTAGE)
+
+  usageLimit    Int          @default(100)    // Số lần sử dụng tối đa
+  usedCount     Int          @default(0)      // Đã sử dụng bao nhiêu lần
+  perUserLimit  Int          @default(1)      // Mỗi user dùng tối đa
+
+  isActive      Boolean      @default(true)
+  startsAt      DateTime     @default(now())
+  endsAt        DateTime?                      // Ngày hết hạn (null = không hết hạn)
+
+  // Target segmentation
+  targetSegment   String?           // "VIP", "NEW", "ALL", "INACTIVE"
+  applicableProducts String[]       // Product IDs áp dụng (rỗng = tất cả)
+  applicableCategories String[]     // Category IDs áp dụng (rỗng = tất cả)
+
+  // Relations
+  usages        DiscountUsage[]
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model DiscountUsage {
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+
+  discountCodeId String       @db.ObjectId
+  discountCode   DiscountCode @relation(fields: [discountCodeId], references: [id])
+
+  userId         String?      @db.ObjectId
+  orderId        String?      @db.ObjectId  // ID đơn hàng sử dụng mã
+
+  discountAmount Float                      // Số tiền được giảm
+  createdAt      DateTime     @default(now())
+}
+
+model Campaign {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+  type        String    // EMAIL, SMS, BANNER, PUSH_NOTIFICATION
+  status      String    @default("DRAFT")  // DRAFT, ACTIVE, PAUSED, ENDED
+
+  // Content
+  subject     String?   // Tiêu đề (email)
+  body        String?   // Nội dung HTML
+  imageUrl    String?   // Banner image
+
+  // Target audience
+  targetSegment  String? // "ALL", "VIP", "NEW", "INACTIVE", "HIGH_SPENDER"
+  targetQuery    String? // JSON query string for filtering
+
+  // Schedule
+  scheduledAt DateTime?
+  startedAt   DateTime?
+  endedAt     DateTime?
+
+  // Metrics
+  totalSent       Int   @default(0)
+  totalOpened     Int   @default(0)
+  totalClicked    Int   @default(0)
+  totalConverted  Int   @default(0)
+  revenueGenerated Float @default(0)
+
+  // Relations
+  linkedDiscountId String?        @db.ObjectId  // Optional: attach a discount
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model CustomerSegment {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+
+  // Criteria (JSON)
+  criteria    String    // JSON: { minOrders, minSpent, lastOrderDays, categories... }
+
+  // Stats
+  customerCount Int     @default(0)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model AbandonedCart {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String?   @db.ObjectId
+  email       String?
+  phone       String?
+  cartData    String                       // JSON snapshot of cart items
+  cartValue   Float
+
+  status      String    @default("PENDING")  // PENDING, RECOVERED, EXPIRED
+  reminderSent Int      @default(0)
+  lastReminderAt DateTime?
+
+  recoveredAt DateTime?
+  recoveredOrderId String? @db.ObjectId
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model MarketingEvent {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  event       String                      // VIEW, ADD_TO_CART, CHECKOUT, PURCHASE, DISCOUNT_APPLIED
+  userId      String?   @db.ObjectId
+  sessionId   String?
+  productId   String?   @db.ObjectId
+  metadata    String?                     // JSON extra data
+  value       Float?                      // Order value if purchase
+
+  createdAt   DateTime  @default(now())
+}

@@ -4,10 +4,15 @@ const prisma = new PrismaClient();
 
 async function main() {
     console.log('🔥 Bắt đầu dọn dẹp Database cũ...');
-    // Xoá theo thứ tự từ con đến cha để không bị lỗi khoá ngoại
-    await prisma.productVariant.deleteMany();
-    await prisma.product.deleteMany();
-    await prisma.category.deleteMany();
+    // Xoá theo thứ tự từ con đến cha, bỏ qua lỗi nếu collection chưa tồn tại
+    try { await prisma.productVariant.deleteMany(); } catch (e: any) { if (e.code !== 'P2010') throw e; }
+    try { await prisma.product.deleteMany(); } catch (e: any) { if (e.code !== 'P2010') throw e; }
+    try { await prisma.category.deleteMany(); } catch (e: any) { if (e.code !== 'P2010') throw e; }
+    try { await prisma.collection.deleteMany(); } catch (e: any) { if (e.code !== 'P2010') throw e; }
+    try { await prisma.collectionItem.deleteMany(); } catch (e: any) { if (e.code !== 'P2010') throw e; }
+    try { await prisma.review.deleteMany(); } catch (e: any) { if (e.code !== 'P2010') throw e; }
+    try { await prisma.orderItem.deleteMany(); } catch (e: any) { if (e.code !== 'P2010') throw e; }
+    try { await prisma.order.deleteMany(); } catch (e: any) { if (e.code !== 'P2010') throw e; }
 
     console.log('✨ Đang tạo Danh mục (Categories)...');
     const catNu = await prisma.category.create({ data: { name: 'Nước hoa Nữ' } });

@@ -12,7 +12,11 @@ export async function GET(
 
     const product = await prisma.product.findUnique({
         where: { id },
-        include: { variants: { orderBy: { volume: 'asc' } } },
+        include: {
+            variants: { orderBy: { volume: 'asc' } },
+            reviews: { orderBy: { createdAt: 'desc' }, take: 20 },
+            category: { select: { id: true, name: true } },
+        },
     });
 
     if (!product) return NextResponse.json({ error: 'Không tìm thấy' }, { status: 404 });

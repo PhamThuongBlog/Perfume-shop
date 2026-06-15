@@ -29,10 +29,11 @@ const DOT = 'w-2 h-2 rounded-full bg-stone-900';
 const MIN = 100000;
 const MAX = 30000000;
 
-export default function ShopFilters({ categories, brands, volumes, searchParams, onUpdate, onUpdatePrice }: {
+export default function ShopFilters({ categories, brands, volumes, genders, searchParams, onUpdate, onUpdatePrice }: {
     categories: { id: string; name: string }[];
     brands: string[];
     volumes: number[];
+    genders: string[];
     searchParams: Record<string, string>;
     onUpdate: (key: string, value: string | null) => void;
     onUpdatePrice: (min: number | null, max: number | null) => void;
@@ -40,6 +41,7 @@ export default function ShopFilters({ categories, brands, volumes, searchParams,
     const activeCat = searchParams.category ?? null;
     const activeBrand = searchParams.brand ?? null;
     const activeVolume = searchParams.volume ?? null;
+    const activeGender = searchParams.gender ?? null;
 
     const initMin = searchParams.minPrice ? Number(searchParams.minPrice) : MIN;
     const initMax = searchParams.maxPrice ? Number(searchParams.maxPrice) : MAX;
@@ -162,6 +164,36 @@ export default function ShopFilters({ categories, brands, volumes, searchParams,
                                     {activeVolume === String(v) && <span className={DOT} />}
                                 </span>
                                 {v}ml
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            </AccordionSection>
+
+            {/* Gioi tinh */}
+            <AccordionSection title="Gioi tinh">
+                <ul className="space-y-2">
+                    <li>
+                        <button
+                            onClick={() => onUpdate('gender', null)}
+                            className="flex items-start gap-2.5 w-full text-left text-stone-600 hover:text-stone-900 transition-colors"
+                        >
+                            <span className={!activeGender ? RADIO_ACTIVE : RADIO}>
+                                {!activeGender && <span className={DOT} />}
+                            </span>
+                            Tat ca
+                        </button>
+                    </li>
+                    {genders.map(g => (
+                        <li key={g}>
+                            <button
+                                onClick={() => onUpdate('gender', activeGender === g ? null : g)}
+                                className="flex items-start gap-2.5 w-full text-left text-stone-600 hover:text-stone-900 transition-colors"
+                            >
+                                <span className={activeGender === g ? RADIO_ACTIVE : RADIO}>
+                                    {activeGender === g && <span className={DOT} />}
+                                </span>
+                                {g === 'Nu' ? 'Nuoc hoa Nu' : g === 'Nam' ? 'Nuoc hoa Nam' : 'Unisex'}
                             </button>
                         </li>
                     ))}

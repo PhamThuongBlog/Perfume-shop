@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const category = searchParams.get('category');
+    const gender = searchParams.get('gender');
     const brand = searchParams.get('brand');
     const minPrice = searchParams.get('minPrice');
     const maxPrice = searchParams.get('maxPrice');
@@ -13,6 +14,7 @@ export async function GET(req: NextRequest) {
     const products = await prisma.product.findMany({
         where: {
             ...(category && { category: { name: category } }),
+            ...(gender && { gender }),
             ...(brand && { brand }),
             ...(q && {
                 OR: [

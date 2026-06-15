@@ -38,11 +38,12 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
 ];
 
 export default function ShopClient({
-                                       categories, brands, volumes,
+                                       categories, brands, volumes, genders,
                                    }: {
     categories: { id: string; name: string }[];
     brands: string[];
     volumes: number[];
+    genders: string[];
 }) {
     const router = useRouter();
     const pathname = usePathname();
@@ -83,7 +84,7 @@ export default function ShopClient({
 
     const sorted = sortProducts(products, sort);
 
-    const activeFilters = (['category', 'brand', 'volume'] as const)
+    const activeFilters = (['category', 'brand', 'volume', 'gender'] as const)
         .filter(k => searchParams.get(k))
         .map(k => ({ key: k, value: searchParams.get(k)! }));
 
@@ -132,7 +133,7 @@ export default function ShopClient({
                 <div className="flex flex-wrap gap-2 mb-5">
                     {activeFilters.map(f => (
                         <span key={f.key} className="flex items-center gap-1 px-3 py-1 text-xs bg-stone-900 text-white rounded-full">
-              {f.key === 'volume' ? `${f.value}ml` : f.value}
+              {f.key === 'volume' ? `${f.value}ml` : f.key === 'gender' ? (f.value === 'Nu' ? 'Nuoc hoa Nu' : f.value === 'Nam' ? 'Nuoc hoa Nam' : 'Unisex') : f.value}
                             <button onClick={() => updateFilter(f.key, null)}><X size={11} /></button>
             </span>
                     ))}
@@ -163,6 +164,7 @@ export default function ShopClient({
                         categories={categories}
                         brands={brands}
                         volumes={volumes}
+                        genders={genders}
                         searchParams={Object.fromEntries(searchParams.entries())}
                         onUpdate={updateFilter}
                     />
@@ -181,6 +183,7 @@ export default function ShopClient({
                                 categories={categories}
                                 brands={brands}
                                 volumes={volumes}
+                                genders={genders}
                                 searchParams={Object.fromEntries(searchParams.entries())}
                                 onUpdate={(k, v) => { updateFilter(k, v); setMobileFilterOpen(false); }}
                             />
