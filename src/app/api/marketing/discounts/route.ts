@@ -49,17 +49,17 @@ export async function POST(req: NextRequest) {
   if (!session || session.user.role !== 'ADMIN') {
     return NextResponse.json({ success: false, error: { code: 'UNAUTHORIZED', message: 'Quyền admin yêu cầu' } }, { status: 403 });
   }
+  const body = await req.json();
+  const { code, description, type, value, minOrderValue, maxDiscount, usageLimit, perUserLimit, startsAt, endsAt, targetSegment, applicableProducts, applicableCategories } = body;
+  if (!code || !type || value === undefined) {
+    return NextResponse.json({ success: false, error: { code: 'VALIDATION', message: 'Thiếu code, type hoặc value' } }, { status: 400 });
+  }
+  const codeUpper = code.toUpperCase();
+
   try {
-    const body = await req.json();
-    const { code, description, type, value, minOrderValue, maxDiscount, usageLimit, perUserLimit, startsAt, endsAt, targetSegment, applicableProducts, applicableCategories } = body;
-
-    if (!code || !type || value === undefined) {
-      return NextResponse.json({ success: false, error: { code: 'VALIDATION', message: 'Thiếu code, type hoặc value' } }, { status: 400 });
-    }
-
     const discount = await prisma.discountCode.create({
       data: {
-        code: code.toUpperCase(),
+        code: codeUpper,
         description, type, value: parseFloat(value),
         minOrderValue: minOrderValue ? parseFloat(minOrderValue) : 0,
         maxDiscount: maxDiscount ? parseFloat(maxDiscount) : null,
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, data: discount }, { status: 201 });
   } catch (error: any) {
     if (error.code === 'P2002') {
-      return NextResponse.json({ success: false, error: { code: 'DUPLICATE', message: `Mã "${body.code}" đã tồn tại` } }, { status: 409 });
+      return NextResponse.json({ success: false, error: { code: 'DUPLICATE', message: `Mã "${codeUpper}" đã tồn tại` } }, { status: 409 });
     }
     return NextResponse.json({ success: false, error: { code: 'SERVER_ERROR', message: error.message } }, { status: 500 });
   }

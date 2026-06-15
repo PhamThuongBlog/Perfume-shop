@@ -1,0 +1,96 @@
+# ============================================================
+# AURA SIGNATURE - Docker Compose
+# Stack: Next.js 16 + MongoDB 8 (replica set)
+# ============================================================
+
+services:
+
+  # ---- MongoDB (replica set for Prisma transactions) ----
+  mongodb:
+    image: mongo:8.0
+    container_name: aura-mongodb
+    restart: unless-stopped
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh --quiet localhost:27017/test --quiet 2>/dev/null || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - aura-network
+
+  # ---- MongoDB Replica Set Initializer ----
+  mongo-init:
+    image: mongo:8.0
+    container_name: aura-mongo-init
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    entrypoint: >
+      bash -c "
+      echo 'Initializing MongoDB replica set...';
+      mongosh --host mongodb:27017 --eval '
+        try {
+          var status = rs.status();
+          print(\"Replica set already initialized: \" + status.set);
+        } catch(e) {
+          rs.initiate({
+            _id: \"rs0\",
+            members: [{ _id: 0, host: \"mongodb:27017\" }]
+          });
+          print(\"Replica set initialized!\");
+        }
+      ';
+      echo 'Replica init complete.'
+      "
+    networks:
+      - aura-network
+
+  # ---- AURA Signature App ----
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aura-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      # MongoDB connection (replica set mode)
+      - DATABASE_URL=mongodb://mongodb:27017/perfume-shop?replicaSet=rs0
+      # NextAuth
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-change-me-to-random-secret-in-production}
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
+      # JWT
+      - JWT_SECRET=${JWT_SECRET:-change-me-to-random-jwt-secret}
+      # Cloudinary (optional)
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME:-}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY:-}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET:-}
+      # Google Gemini AI (optional - local engine works without)
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      # Seed on first run
+      - FIRST_RUN=${FIRST_RUN:-true}
+    depends_on:
+      mongo-init:
+        condition: service_completed_successfully
+    networks:
+      - aura-network
+
+volumes:
+  mongodb_data:
+    driver: local
+    name: aura-mongodb-data
+
+networks:
+  aura-network:
+    driver: bridge
+    name: aura-network

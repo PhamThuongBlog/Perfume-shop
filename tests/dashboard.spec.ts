@@ -6,7 +6,7 @@ const BASE = 'http://localhost:3000';
  * Each test logs in independently if needed.
  * Tests that need admin login call loginAsAdmin() first.
  */
-async function loginAsAdmin(page) {
+async function loginAsAdmin(page: any) {
   await page.goto(`${BASE}/login`);
   await page.fill('input[type="email"]', 'admin@aura.com');
   await page.fill('input[type="password"]', 'Admin@123456');
@@ -14,7 +14,7 @@ async function loginAsAdmin(page) {
   await page.waitForTimeout(3000);
   // Should reach home or callback (allow for slow login)
   try {
-    await page.waitForURL((url) => !url.toString().includes('/login'), { timeout: 8000 });
+    await page.waitForURL((url: any) => !url.toString().includes('/login'), { timeout: 8000 });
   } catch {
     // If still on login, try clicking again
     if (page.url().includes('/login')) {
@@ -25,14 +25,14 @@ async function loginAsAdmin(page) {
   expect(page.url()).not.toContain('/login');
 }
 
-async function loginAsUser(page) {
+async function loginAsUser(page: any) {
   await page.goto(`${BASE}/login`);
   await page.fill('input[type="email"]', 'nguyenvana@test.com');
   await page.fill('input[type="password"]', 'Admin@123456');
   await page.click('button[type="submit"]');
   await page.waitForTimeout(3000);
   try {
-    await page.waitForURL((url) => !url.toString().includes('/login'), { timeout: 8000 });
+    await page.waitForURL((url: any) => !url.toString().includes('/login'), { timeout: 8000 });
   } catch { /* OK */ }
   expect(page.url()).not.toContain('/login');
 }

@@ -9,7 +9,14 @@
     "start": "next start",
     "lint": "eslint",
     "db:seed": "npx tsx prisma/seed.ts",
-    "db:studio": "npx prisma studio"
+    "db:seed:full": "npx tsx prisma/seed-full.ts && npx tsx prisma/seed-categories.ts",
+    "db:studio": "npx prisma studio",
+    "docker:build": "docker compose build",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f app",
+    "docker:first-run": "FIRST_RUN=true docker compose up -d",
+    "docker:clean": "docker compose down -v && docker rmi perfume-shop-app"
   },
   "dependencies": {
     "@google/genai": "^1.48.0",

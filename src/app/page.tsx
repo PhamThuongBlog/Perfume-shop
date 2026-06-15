@@ -4,6 +4,8 @@ import CategorySection from "@/app/components/home/CategorySection";
 import ChatContainer from "@/app/components/chat/ChatContainer";
 import SocialBanner from "@/app/components/home/SocialBanner";
 
+export const dynamic = 'force-dynamic';
+
 export default function Home() {
     return (
         <div className="min-h-screen bg-[#FDFBF7] text-stone-800 font-sans selection:bg-rose-200">

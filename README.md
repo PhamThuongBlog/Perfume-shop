@@ -7,6 +7,8 @@
 ![Prisma](https://img.shields.io/badge/Prisma-5.22-purple?logo=prisma)
 ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v4-38bdf8?logo=tailwindcss)
 ![Playwright](https://img.shields.io/badge/Playwright-30/30_passed-45ba4b?logo=playwright)
+![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker)
+![Size](https://img.shields.io/badge/Image-484MB-informational)
 
 **AURA Signature** là nền tảng thương mại điện tử bán nước hoa cao cấp, xây dựng trên Next.js 16 với đầy đủ tính năng: danh mục sản phẩm, giỏ hàng, thanh toán, quản trị, marketing số, và **AI tư vấn nước hoa thông minh**.
 
@@ -160,6 +162,107 @@ npm run db:seed
 
 # Chạy dev server
 npm run dev
+```
+
+### 🐳 Chạy Bằng Docker (Khuyên Dùng Cho Production)
+
+Docker image đã được đóng gói sẵn với toàn bộ ứng dụng + MongoDB replica set. **Không cần cài Node.js hay MongoDB riêng.**
+
+#### Yêu cầu
+
+- **Docker** & **Docker Compose** ≥ v2
+
+#### Cách 1: Docker Compose (tự build)
+
+```bash
+# Clone repository
+git clone https://github.com/PhamThuongBlog/Perfume-shop.git
+cd Perfume-shop
+
+# Build và chạy (lần đầu chạy ~2-3 phút)
+docker compose up -d
+
+# Xem logs
+docker compose logs -f app
+
+# Mở trình duyệt
+# http://localhost:3000
+```
+
+#### Cách 2: Pull image từ GitHub Container Registry
+
+```bash
+# Pull image
+docker pull ghcr.io/phamthuongblog/perfume-shop:latest
+
+# Tạo docker-compose.yml đơn giản
+cat > docker-compose.yml << 'EOF'
+services:
+  mongodb:
+    image: mongo:8.0
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    ports: ["27017:27017"]
+    volumes: [mongodb_data:/data/db]
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh --quiet localhost:27017/test || exit 1
+      interval: 10s; timeout: 5s; retries: 10; start_period: 30s
+  mongo-init:
+    image: mongo:8.0
+    depends_on: { mongodb: { condition: service_healthy } }
+    entrypoint: >
+      bash -c "mongosh --host mongodb:27017 --eval 'rs.initiate({_id:\"rs0\",members:[{_id:0,host:\"mongodb:27017\"}]})'"
+  app:
+    image: ghcr.io/phamthuongblog/perfume-shop:latest
+    ports: ["3000:3000"]
+    environment:
+      - DATABASE_URL=mongodb://mongodb:27017/perfume-shop?replicaSet=rs0
+      - NEXTAUTH_SECRET=change-me-to-random-secret
+      - NEXTAUTH_URL=http://localhost:3000
+      - JWT_SECRET=change-me-to-random-jwt-secret
+      - FIRST_RUN=true
+    depends_on: { mongo-init: { condition: service_completed_successfully } }
+volumes:
+  mongodb_data:
+EOF
+
+# Chạy
+docker compose up -d
+```
+
+#### Các lệnh Docker hữu ích
+
+```bash
+npm run docker:build      # Build Docker image
+npm run docker:up         # Chạy containers
+npm run docker:down       # Dừng containers
+npm run docker:logs       # Xem logs app
+npm run docker:first-run  # Chạy + seed database lần đầu
+npm run docker:clean      # Xóa containers + volumes + image
+```
+
+#### Kiến trúc Docker
+
+```
+┌──────────────────────────────────────────┐
+│  docker-compose.yml                      │
+│                                          │
+│  ┌──────────┐  ┌──────────────┐         │
+│  │ MongoDB  │  │ AURA App     │         │
+│  │ 8.0      │←─│ Next.js 16   │         │
+│  │ Replica  │  │ Port :3000   │         │
+│  │ Set rs0  │  │              │         │
+│  │ :27017   │  │ Entrypoint:  │         │
+│  │          │  │  Wait DB →   │         │
+│  │Volume:   │  │  Prisma Gen →│         │
+│  │mongodb   │  │  Seed →      │         │
+│  │_data     │  │  Start App   │         │
+│  └──────────┘  └──────────────┘         │
+│       ↑              ↑                   │
+│  ┌──────────┐                             │
+│  │mongo-init│ (one-time setup)           │
+│  │rs.init   │                             │
+│  └──────────┘                             │
+└──────────────────────────────────────────┘
 ```
 
 ### Truy Cập

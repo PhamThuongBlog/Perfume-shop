@@ -52,7 +52,7 @@ async function main() {
         name: p.name, brand: p.brand, description: p.desc, imageUrl: p.img, categoryId: p.cat.id,
         topNotes: ['Hoa hong'], heartNotes: ['Hoa nhai'], baseNotes: ['Xa huong'],
         season: ['Xuan'], style: ['Sang trong'], concentration: 'EDP', origin: 'Phap', gender: p.cat.name === 'Nuoc hoa Nam' ? 'Nam' : p.cat.name === 'Unisex' ? 'Unisex' : 'Nu',
-        variants: { create: p.variants.map(v => ({ volume: v.v, price: v.p, stock: v.s, discountPercent: v.d || 0 })) }
+        variants: { create: p.variants.map(v => ({ volume: v.v, price: v.p, stock: v.s, discountPercent: (v as any).d || 0 })) }
       }
     });
     prodIds.push(prod.id);
