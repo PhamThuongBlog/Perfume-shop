@@ -40,6 +40,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
+      - AUTH_TRUST_HOST=true
       - DATABASE_URL=mongodb://mongodb:27017/perfume-shop?replicaSet=rs0
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-change-me-to-random-secret-in-production}
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
