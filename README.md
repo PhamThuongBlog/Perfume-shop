@@ -179,11 +179,15 @@ Docker image đã được đóng gói sẵn với toàn bộ ứng dụng + Mon
 git clone https://github.com/PhamThuongBlog/Perfume-shop.git
 cd Perfume-shop
 
-# Build và chạy (lần đầu chạy ~2-3 phút)
+# Chạy lần đầu (có seed database)
+FIRST_RUN=true docker compose up -d
+
+# Chạy các lần sau (giữ data)
 docker compose up -d
 
-# Xem logs
-docker compose logs -f app
+# Mở http://localhost:3000
+# Admin: admin@aura.com / Admin@123456
+# User: nguyenvana@test.com / Admin@123456
 
 # Mở trình duyệt
 # http://localhost:3000
